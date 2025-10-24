@@ -14,14 +14,14 @@ int main() {
 
     std::cerr << std::unitbuf;
 
-
-
-    std::cout << "$ ";
-
+    std::cout<<"$ ";
 
     std::string input;
     while (std::getline(std::cin, input)) {
         std::cout << input << "\n";
+        if (input == "\\q") {
+            break;
+        }
         std::cout << "$ ";
     }
 }
