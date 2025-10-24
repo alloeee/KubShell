@@ -20,7 +20,8 @@ int main() {
 
 
     std::string input;
-    std::getline(std::cin, input);
-    std::cout<<input<<"\n";
-    return 0;
+    while (std::getline(std::cin, input)) {
+        std::cout << input << "\n";
+        std::cout << "$ ";
+    }
 }
