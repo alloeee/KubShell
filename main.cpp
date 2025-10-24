@@ -21,7 +21,7 @@ int main() {
 
     std::string input;
     while (std::getline(std::cin, input)) {
-        std::cout << input << "\n";
+
     
         if(!input.empty()){
 
@@ -48,6 +48,15 @@ int main() {
     else if (input == "\\q") {
         break;
     }
-    std::cout << "$ ";
+
+    else if (input.substr(0, 7) == "debug '" && input[input.length() - 1] == '\''){
+
+        std::cout << input.substr(7, input.length() - 8) << std::endl;    
+    
     }
+
+    std::cout << "$ ";
+
+    }
+
 }
