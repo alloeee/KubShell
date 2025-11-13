@@ -1,10 +1,23 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <unistd.h>//unitbuf
+#include <sys/wait.h>//Для waitpid
 #include <vector>
-#include<sstream>
+#include<sstream>//Для iss
+#include<signal.h>//Работа с сигналами
+
+
+//Функция для обработки сигнала
+void sighup_handler(int signal_nubmer)
+{
+    //Если получаем номер SIGHUP(обычно 1)
+    if(signal_nubmer==SIGHUP)
+    {
+        std::cout<<"Configuration reloaded\n";
+        std::cout<<"$ ";
+    }
+}
 
 
 int main() 
@@ -15,7 +28,7 @@ int main()
 
 
 
-    //std::cout << "$ ";
+    //std::cout << "$ \n";
 
 
     //Сохранение пути в переменную для истории
@@ -26,6 +39,8 @@ int main()
 
     std::string input;
 
+    //Если приходит сигнал с номером SIGHUP то вызываем sighup_handler
+    signal(SIGHUP,sighup_handler);
 
     while (std::getline(std::cin, input))
     {
@@ -54,7 +69,7 @@ int main()
         else if (input == "\\q")
         {
             break;
-        }
+        }   
 
 
         //  echo
@@ -63,7 +78,8 @@ int main()
         else if (input.substr(0, 7) == "debug '" && input[input.length() - 1] == '\'')
         {
 
-            std::cout << input.substr(7, input.length() - 8) << std::endl;    
+            std::cout << input.substr(7, input.length() - 8) << std::endl;  
+            continue;  
 
         }
 
@@ -117,23 +133,28 @@ int main()
             {
                 std::cout << varName << ": не найдено\n";
             }
+            continue;
         }
 
     else 
     {
+        //Создаем процесс и записываем process id
         pid_t pid = fork();
         
+        //Если дочерний процесс(в нем выполним бинарник)
         if (pid == 0) 
         {
             // Создаем копии строк для аргументов
             std::vector<std::string> tokens;
+            //Указатели для execvp
             std::vector<char*> args;
             std::string token;
+            //Разбиваем по пробелам для аргументов
             std::istringstream iss(input);
             
             while (iss >> token) 
             {
-                tokens.push_back(token);  // сохраняем копии
+                tokens.push_back(token);  // Сохраняем копии
             }
             
             // Преобразуем в char*
@@ -141,17 +162,14 @@ int main()
             {
                 args.push_back(const_cast<char*>(t.c_str()));
             }
+            //Для execvp чтобы видел конец
             args.push_back(nullptr);
             
-            std::cout << "DEBUG: Executing: ";
-            for (int i = 0; args[i] != nullptr; i++) 
-            {
-                std::cout << "[" << args[i] << "] ";
-            }
-            std::cout << "\n";
-            
+            //Заменяем программу на новую
+            //args[0] - название команды, args.data() - ссылка на C массив строк для аргументов
             execvp(args[0], args.data());
             
+            //Если не нашли команду то выведет это(вернет управление), при успехе не дойдем до этих строк
             std::cout << args[0] << ": command not found\n";
             exit(1);
             
@@ -159,6 +177,7 @@ int main()
         else if (pid > 0) 
         {
             int status;
+            //Ожидаем дочерний
             waitpid(pid, &status, 0);
         } 
         else 
@@ -170,7 +189,7 @@ int main()
         //else std::cout<<input<<": command not found\n";
 
 
-        //std::cout<<"$ ";
+        std::cout<<"$ ";
 
     }
 
