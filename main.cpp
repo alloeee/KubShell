@@ -6,6 +6,7 @@
 #include <vector>
 #include<sstream>//Для iss
 #include<signal.h>//Работа с сигналами
+#include <cstdint>//Для uint32_t 
 
 
 //Функция для обработки сигнала
@@ -19,6 +20,105 @@ void sighup_handler(int signal_nubmer)
     }
 }
 
+
+//  \l /dev/sda
+void check_disk_partitions(const std::string& device_path)
+{
+    //Создание потока для чтения файла, device_path - путь к устройству (в нашем случае /dev/sda)
+    std::ifstream device(device_path, std::ios::binary);
+
+    //Если ошибка открытия файла
+    if (!device) 
+    {
+        std::cout << "Error: Cannot open device " << device_path << "\n";
+        return;
+    }
+    
+
+    //Буфер на 512 байт
+    char sector[512];
+    //Читаем из нашего файла с диском первые 512 байт в буфер
+    device.read(sector, 512);
+    
+
+    //Если прочитали не 512 байт(например меньше) - ошибка чтения
+    if (device.gcount() != 512) 
+    {
+        std::cout << "Error: Cannot read disk\n";
+        return;
+    }
+    
+    // Проверяем сигнатуру - 510 и 511 байты должны быть 0x55 и 0xAA соответственно, иначе это не MBR/GPT
+    if ((unsigned char)sector[510] != 0x55 || (unsigned char)sector[511] != 0xAA) 
+    {
+        std::cout << "Error: Invalid disk signature\n";
+        return;
+    }
+    
+    // Определяем тип диска
+    bool is_gpt = false;
+    //Идем начиная с 446 байта(начало таблицы разделов), всего 4 записи и каждая по 16 байт
+    //Нас интересует тип записи(4 байт в записи)
+    for (int i = 0; i < 4; i++) 
+    {
+        //Если находим байт 0xEE это значит что он GPT Protective => это GPT
+        if ((unsigned char)sector[446 + i * 16 + 4] == 0xEE) 
+        {
+            is_gpt = true;
+            break;
+        }
+    }
+    
+    if (!is_gpt) 
+    {
+        // MBR - простой вывод
+        for (int i = 0; i < 4; i++) 
+        {
+            //Начало каждого из 4 разделов считаем для каждого прохода цикла
+            int offset = 446 + i * 16;
+
+            //Опять смотрим тип как в проверке на GPT
+            unsigned char type = sector[offset + 4];
+            
+            //Раздел не существует если тип равен нулю
+            if (type != 0) {
+                //uint32_t - это беззнаковое 32-битное целое число
+                //Читаем 12-15 байт раздела, отвечающий за количество секторов
+                //Берем их(4 байта) как 32 битное число с помощью    *(uint32_t*)&sector
+                uint32_t num_sectors = *(uint32_t*)&sector[offset + 12];
+                //1 сектор - 512 байт, в 1 MB 1024*1024 байт => 2048 секторов
+                uint32_t size_mb = num_sectors / 2048;
+                //Если первый байт равен 0x80 то bootable
+                bool bootable = (sector[offset] == 0x80);
+                
+                std::cout << "Partition " << (i + 1) << ": Size=" << size_mb << "MB, Bootable: ";
+                if(bootable)
+                    std::cout<<"Yes\n";
+                else std::cout<<"No\n";
+            }
+        }
+    } 
+
+    else 
+    {
+        //  GPT - просто количество разделов
+        //Читаем из диска вторые 512 байт, в них хранится информация о GPT диске
+        device.read(sector, 512);
+        //Если прочли 512 (проверка как и раньше) и при этом байты 0-7 == "EFI PART"
+        if (device.gcount() == 512 && sector[0] == 'E' && sector[1] == 'F' && sector[2] == 'I' && sector[3] == ' ' && sector[4] == 'P' && sector[5] == 'A' &&
+            sector[6] == 'R' && sector[7] == 'T') 
+        {
+            //Также переходим к чтению 4 байтов начиная с 80, тут количество записей в таблице разделов
+            uint32_t num_partitions = *(uint32_t*)&sector[80];
+            std::cout << "GPT partitions: " << num_partitions << "\n";
+        } 
+
+        else 
+        {
+            std::cout << "GPT partitions: unknown\n";
+        }
+    }
+}
 
 int main() 
 {
@@ -71,6 +171,25 @@ int main()
             break;
         }   
 
+
+        //  \l /dev/sda     (запускать через sudo)
+        else if (input.substr(0, 3) == "\\l ") 
+        {
+            std::string device_path = input.substr(3);
+            // Убираем возможные пробелы
+            device_path.erase(0, device_path.find_first_not_of(" \t"));
+            device_path.erase(device_path.find_last_not_of(" \t") + 1);
+            
+            if (device_path.empty()) 
+            {
+                std::cout << "Usage: \\l /dev/device_name (e.g., \\l /dev/sda)\n";
+            } 
+
+            else 
+            {
+                check_disk_partitions(device_path);
+            }
+        }
 
         //  echo
         //Если начинаем debug '
