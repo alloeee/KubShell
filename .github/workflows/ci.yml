@@ -21,13 +21,14 @@ jobs:
         # token: ${{ secrets.PAT_TOKEN }}
 
     - name: Pull Docker image
-      run: docker pull ghcr.io/minkoalexandr/shell/kubsh_test:master
+      run: docker pull ghcr.io/xardb/kubshfuse:master
 
     - name: Run Docker container to build kubsh.deb
       run: |
         docker run --rm \
-          -v $PWD:/mnt \
-          ghcr.io/minkoalexandr/shell/kubsh_test:master
+        -v $PWD:/mnt \
+        ghcr.io/minkoalexandr/shell/kubsh_test:master \
+        make test
 
     - name: Verify kubsh.deb exists
       run: |
