@@ -27,7 +27,7 @@ jobs:
       run: |
         docker run --rm \
         -v $PWD:/mnt \
-        ghcr.io/minkoalexandr/shell/kubsh_test:master \
+        ghcr.io/xardb/kubshfuse:master \
         make test
 
     - name: Verify kubsh.deb exists
