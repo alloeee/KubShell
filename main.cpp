@@ -8,6 +8,8 @@
 #include<signal.h>//Работа с сигналами
 #include <cstdint>//Для uint32_t 
 
+#include "vfs.hpp"//Подключение VFS, в частности функция fuse_start
+
 
 //Функция для обработки сигнала
 void sighup_handler(int signal_nubmer)
@@ -89,7 +91,7 @@ void check_disk_partitions(const std::string& device_path)
                 //1 сектор - 512 байт, в 1 MB 1024*1024 байт => 2048 секторов
                 uint32_t size_mb = num_sectors / 2048;
                 //Если первый байт равен 0x80 то bootable
-                bool bootable = (sector[offset] == 0x80);
+                bool bootable = ((unsigned char)sector[offset] == 0x80);
                 
                 std::cout << "Partition " << (i + 1) << ": Size=" << size_mb << "MB, Bootable: ";
                 if(bootable)
@@ -126,9 +128,12 @@ int main()
     std::cout << std::unitbuf;
     std::cerr << std::unitbuf;
 
+    
 
 
-    //std::cout << "$ \n";
+    fuse_start();
+
+    std::cerr << "$ ";
 
 
     //Сохранение пути в переменную для истории
@@ -304,12 +309,6 @@ int main()
             std::cerr << "Failed to create process\n";
         }
     }
-
-        //else std::cout<<input<<": command not found\n";
-
-
         std::cout<<"$ ";
-
     }
-
 }
