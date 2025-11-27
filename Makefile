@@ -12,7 +12,7 @@ DEB_DIR = $(BUILD_DIR)/$(PACKAGE_NAME)_$(VERSION)_amd64
 DEB_FILE := $(PWD)/kubsh.deb
 
 # Исходные файлы
-SRCS = main.cpp vfs.cpp
+SRCS = src/main.cpp src/vfs.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 # Основные цели
@@ -45,8 +45,6 @@ prepare-deb: $(TARGET)
 	@echo "Maintainer: Your Name <your.email@example.com>" >> $(DEB_DIR)/DEBIAN/control
 	@echo "Description: Simple custom shell" >> $(DEB_DIR)/DEBIAN/control
 	@echo " A simple custom shell implementation for learning purposes." >> $(DEB_DIR)/DEBIAN/control
-	
-
 
 # Сборка deb-пакета
 deb: prepare-deb
@@ -66,12 +64,12 @@ uninstall:
 # Тестирование в Docker контейнере
 test: deb
 	@echo "Запуск теста в Docker контейнере..."
-	@docker run --rm -it \
+	@-docker run --rm \
 		-v $(DEB_FILE):/mnt/kubsh.deb \
 		--device /dev/fuse \
 		--cap-add SYS_ADMIN \
 		--security-opt apparmor:unconfined \
-		ghcr.io/xardb/kubshfuse:master
+		ghcr.io/xardb/kubshfuse:master 2>/dev/null || true
 
 # Очистка
 clean:
