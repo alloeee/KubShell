@@ -12,7 +12,7 @@ DEB_DIR = $(BUILD_DIR)/$(PACKAGE_NAME)_$(VERSION)_amd64
 DEB_FILE := $(PWD)/kubsh.deb
 
 # Исходные файлы
-SRCS = src/main.cpp src/vfs.cpp
+SRCS = main.cpp vfs.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 # Основные цели
