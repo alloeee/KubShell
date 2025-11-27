@@ -31,14 +31,14 @@ jobs:
         ghcr.io/xardb/kubshfuse:master \
         make deb
 
-    - name: Run tests
+    - name: Run tests in container
       run: |
-        docker run --rm \
-        -v $PWD/kubsh.deb:/mnt/kubsh.deb \
-        --device /dev/fuse \
-        --cap-add SYS_ADMIN \
-        --security-opt apparmor:unconfined \
-        ghcr.io/xardb/kubshfuse:master
+          docker run --rm \
+          -v $PWD:/mnt \
+          --device /dev/fuse \
+          --cap-add SYS_ADMIN \
+          --security-opt apparmor:unconfined \
+          ghcr.io/xardb/kubshfuse:master
 
     - name: Verify kubsh.deb exists
       run: |
