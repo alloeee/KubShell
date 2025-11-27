@@ -23,12 +23,22 @@ jobs:
     - name: Pull Docker image
       run: docker pull ghcr.io/xardb/kubshfuse:master
 
-    - name: Run Docker container to build kubsh.deb
+    - name: Build package in container
       run: |
         docker run --rm \
         -v $PWD:/mnt \
+        -w /mnt \
         ghcr.io/xardb/kubshfuse:master \
-        make test
+        make deb
+
+    - name: Run tests
+      run: |
+        docker run --rm \
+        -v $PWD/kubsh.deb:/mnt/kubsh.deb \
+        --device /dev/fuse \
+        --cap-add SYS_ADMIN \
+        --security-opt apparmor:unconfined \
+        ghcr.io/xardb/kubshfuse:master
 
     - name: Verify kubsh.deb exists
       run: |
