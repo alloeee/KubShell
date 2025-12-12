@@ -1,6 +1,7 @@
 # Компилятор и флаги
 CXX = g++
-CXXFLAGS = -std=c++20 -Wall -Wextra 
+CXXFLAGS = -std=c++20 -Wall -Wextra  -lreadline
+READLINE_FLAGS = -lreadline -lhistory
 FUSE_FLAGS = -I/usr/include/fuse3 -lfuse3 -L/usr/lib/x86_64-linux-gnu
 TARGET = kubsh
 
@@ -12,17 +13,17 @@ DEB_DIR = $(BUILD_DIR)/$(PACKAGE_NAME)_$(VERSION)_amd64
 DEB_FILE := $(PWD)/kubsh.deb
 
 # Исходные файлы
-SRCS = main.cpp vfs.cpp
+SRCS = src/main.cpp src/vfs.cpp
 OBJS = $(SRCS:.cpp=.o)
 
 # Основные цели
 all: $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(FUSE_FLAGS)
+	$(CXX) $(CXXFLAGS) -o $(TARGET) $(OBJS) $(FUSE_FLAGS) $(READLINE_FLAGS)
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(FUSE_FLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Запуск шелла
 run: $(TARGET)
@@ -43,6 +44,7 @@ prepare-deb: $(TARGET)
 	@echo "Priority: optional" >> $(DEB_DIR)/DEBIAN/control
 	@echo "Architecture: amd64" >> $(DEB_DIR)/DEBIAN/control
 	@echo "Maintainer: Your Name <your.email@example.com>" >> $(DEB_DIR)/DEBIAN/control
+    @echo "Depends: fuse3, libreadline8" >> $(DEB_DIR)/DEBIAN/control
 	@echo "Description: Simple custom shell" >> $(DEB_DIR)/DEBIAN/control
 	@echo " A simple custom shell implementation for learning purposes." >> $(DEB_DIR)/DEBIAN/control
 
